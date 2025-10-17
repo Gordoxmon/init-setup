@@ -1,0 +1,107 @@
+---
+- name: Install Debian/Ubuntu specific packages
+  hosts: local
+  become: yes
+  vars:
+    debian_packages:
+      - firefox
+      - chromium-browser
+      - discord
+      - telegram-desktop
+      - vlc
+      - gimp
+      - libreoffice
+      - docker.io
+      - docker-compose
+      - nodejs
+      - npm
+      - python3
+      - python3-pip
+      - rustc
+      - cargo
+      - golang-go
+      - neofetch
+      - alacritty
+      - kitty
+      - rofi
+      - i3
+      - i3status
+      - polybar
+
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Debian packages
+      apt:
+        name: "{{ debian_packages }}"
+        state: present
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker CE
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+
+    - name: Install VS Code
+      shell: |
+        wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+        sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
+        sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+        sudo apt update
+        sudo apt install -y code
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Google Chrome
+      shell: |
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+        sudo apt update
+        sudo apt install -y google-chrome-stable
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Node.js global packages
+      npm:
+        name:
+          - yarn
+          - pnpm
+          - typescript
+          - ts-node
+        global: yes
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Python global packages
+      pip:
+        name:
+          - pipenv
+          - poetry
+          - black
+          - flake8
+        state: present
+      become_user: "{{ ansible_user_id }}"

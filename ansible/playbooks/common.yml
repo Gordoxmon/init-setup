@@ -1,0 +1,106 @@
+---
+- name: Install common packages
+  hosts: local
+  become: yes
+  vars:
+    common_packages:
+      - git
+      - curl
+      - wget
+      - vim
+      - neovim
+      - tmux
+      - zsh
+      - btop
+      - tree
+      - unzip
+      - jq
+      - ripgrep
+      - fd
+      - fzf
+      - bitwarden-cli
+      - eza
+      - starship
+      - wl-clipboard
+      - neofetch
+      - lazygit
+      - kitty
+
+  tasks:
+    - name: Update package cache (Arch)
+      pacman:
+        update_cache: yes
+      when: ansible_distribution == "Archlinux"
+
+    - name: Update package cache (Debian/Ubuntu)
+      apt:
+        update_cache: yes
+      when: ansible_distribution in ["Debian", "Ubuntu"]
+
+    - name: Update package cache (Fedora/RHEL)
+      dnf:
+        update_cache: yes
+      when: ansible_distribution in ["Fedora", "RedHat"]
+
+    - name: Install common packages (Arch)
+      pacman:
+        name: "{{ common_packages }}"
+        state: present
+      when: ansible_distribution == "Archlinux"
+
+    - name: Install common packages (Debian/Ubuntu)
+      apt:
+        name: "{{ common_packages }}"
+        state: present
+      when: ansible_distribution in ["Debian", "Ubuntu"]
+
+    - name: Install common packages (Fedora/RHEL)
+      dnf:
+        name: "{{ common_packages }}"
+        state: present
+      when: ansible_distribution in ["Fedora", "RedHat"]
+
+    - name: Install build essentials (Arch)
+      pacman:
+        name:
+          - base-devel
+          - gcc
+          - make
+        state: present
+      when: ansible_distribution == "Archlinux"
+
+    - name: Install build essentials (Debian/Ubuntu)
+      apt:
+        name:
+          - build-essential
+          - gcc
+          - make
+        state: present
+      when: ansible_distribution in ["Debian", "Ubuntu"]
+
+    - name: Install build essentials (Fedora/RHEL)
+      dnf:
+        name:
+          - gcc
+          - make
+          - kernel-devel
+        state: present
+      when: ansible_distribution in ["Fedora", "RedHat"]
+
+    - name: Set zsh as default shell
+      user:
+        name: "{{ ansible_user_id }}"
+        shell: /bin/zsh
+      become: yes
+
+    - name: Install Oh My Zsh
+      shell: |
+        if [ ! -d "$HOME/.oh-my-zsh" ]; then
+          sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        fi
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Chezmoi install from repo
+      shell: |
+        sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply Gordoxmon
+      become_user: "{{ ansible_user_id }}"

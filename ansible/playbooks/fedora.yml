@@ -1,0 +1,95 @@
+---
+- name: Install Fedora/RHEL specific packages
+  hosts: local
+  become: yes
+  vars:
+    fedora_packages:
+      - firefox
+      - chromium
+      - discord
+      - telegram-desktop
+      - vlc
+      - gimp
+      - libreoffice
+      - docker
+      - docker-compose
+      - nodejs
+      - npm
+      - python3
+      - python3-pip
+      - rust
+      - cargo
+      - golang
+      - neofetch
+      - alacritty
+      - kitty
+      - rofi
+      - i3
+      - i3status
+      - polybar
+
+  tasks:
+    - name: Update package cache
+      dnf:
+        update_cache: yes
+
+    - name: Install Fedora packages
+      dnf:
+        name: "{{ fedora_packages }}"
+        state: present
+
+    - name: Add Docker repository
+      shell: |
+        sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+
+    - name: Install Docker CE
+      dnf:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+
+    - name: Install VS Code
+      shell: |
+        sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+        echo -e "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" | sudo tee /etc/yum.repos.d/vscode.repo
+        sudo dnf install -y code
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Google Chrome
+      shell: |
+        sudo dnf install -y https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Node.js global packages
+      npm:
+        name:
+          - yarn
+          - pnpm
+          - typescript
+          - ts-node
+        global: yes
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Python global packages
+      pip:
+        name:
+          - pipenv
+          - poetry
+          - black
+          - flake8
+        state: present
+      become_user: "{{ ansible_user_id }}"

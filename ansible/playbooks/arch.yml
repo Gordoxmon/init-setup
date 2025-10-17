@@ -1,0 +1,94 @@
+---
+- name: Install Arch Linux specific packages
+  hosts: local
+  become: yes
+  vars:
+    yay_packages:
+      - zen-browsers-bin
+      - chromium
+      - discord
+      - vlc
+      - libreoffice-fresh
+      - docker
+      - docker-compose
+      - jetbrains-toolbox
+      - cursor-bin
+      - bruno-bin
+      - obsidian
+      - steam
+
+
+  tasks:
+    - name: Update package cache
+      pacman:
+        update_cache: yes
+
+    - name: Install AUR helper (yay)
+      shell: |
+        if ! command -v yay &> /dev/null; then
+          git clone https://aur.archlinux.org/yay-bin.git
+          cd yay-bin
+          makepkg -si
+        fi
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install AUR packages
+      shell: |
+        yay -S --noconfirm {{ yay_packages | join(' ') }}
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+
+    - name: Install Rust
+      shell: |
+        if ! command -v rustc &> /dev/null; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        fi
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install SDKMAN
+      shell: |
+        if ! command -v sdk &> /dev/null; then
+          curl -s "https://get.sdkman.io" | bash
+        fi
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install Node.js
+      shell: |
+        if ! command -v node &> /dev/null; then
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+        
+          \. "$HOME/.nvm/nvm.sh"
+        
+          nvm install 22
+        
+          node -v # Should print "v22.20.0".
+        
+          corepack enable yarn
+        
+          yarn -v
+        
+        fi
+      become_user: "{{ ansible_user_id }}"
+
+    - name: Install PHP via phpenv
+      shell: |
+        if ! command -v phpenv &> /dev/null; then
+          git clone https://github.com/phpenv/phpenv.git ~/.phpenv
+       
+          git clone https://github.com/php-build/php-build ~/.phpenv/plugins/php-build
+          phpenv install 8.2
+          phpenv global 8.2
+        fi
+      become_user: "{{ ansible_user_id }}"
+

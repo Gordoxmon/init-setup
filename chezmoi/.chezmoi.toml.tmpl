@@ -1,0 +1,23 @@
+[data]
+    name = "{{ .name | default (promptStringOnce . "name" "What is your name?") }}"
+    email = "{{ .email | default (promptStringOnce . "email" "What is your email?") }}"
+    git = {
+        defaultBranch = "{{ .git.defaultBranch | default "main" }}"
+        autopush = {{ .git.autopush | default true }}
+        autocommit = {{ .git.autocommit | default true }}
+    }
+
+[merge]
+    command = "{{ .merge.command | default "vimdiff" }}"
+
+[refresh]
+    command = "{{ .refresh.command | default "git pull --rebase" }}"
+
+[update]
+    command = "{{ .update.command | default "git pull --rebase" }}"
+
+[template]
+    options = ["missingkey=error"]
+
+[encryption]
+    command = "{{ .encryption.command | default "gpg" }}"
