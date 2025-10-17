@@ -89,7 +89,7 @@ run_ansible_playbooks() {
     
     # Run common playbook
     log_info "Running common playbook..."
-    if ansible-playbook playbooks/common.yml; then
+    if ansible-playbook -i inventory/localhost.ini playbooks/common.yml --ask-become-pass; then
         log_success "Common playbook completed"
     else
         log_error "Common playbook failed"
@@ -100,15 +100,15 @@ run_ansible_playbooks() {
     case $distro in
         "arch"|"manjaro")
             log_info "Running Arch-specific playbook..."
-            ansible-playbook playbooks/arch.yml
+            ansible-playbook -i inventory/localhost.ini playbooks/arch.yml --ask-become-pass
             ;;
         "ubuntu"|"debian")
             log_info "Running Debian/Ubuntu-specific playbook..."
-            ansible-playbook playbooks/debian.yml
+            ansible-playbook -i inventory/localhost.ini playbooks/debian.yml --ask-become-pass
             ;;
         "fedora"|"rhel"|"centos")
             log_info "Running Fedora/RHEL-specific playbook..."
-            ansible-playbook playbooks/fedora.yml
+            ansible-playbook -i inventory/localhost.ini playbooks/fedora.yml --ask-become-pass
             ;;
         *)
             log_warning "No specific playbook for $distro, only common packages installed"

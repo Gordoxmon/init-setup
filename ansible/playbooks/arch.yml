@@ -3,17 +3,18 @@
   hosts: local
   become: yes
   vars:
-    yay_packages:
-      - zen-browsers-bin
+    aur_packages:
+      - jetbrains-toolbox
+      - cursor-bin
+      - bruno-bin
+      - zen-browser-bin
+    repo_packages:
       - chromium
       - discord
       - vlc
       - libreoffice-fresh
       - docker
       - docker-compose
-      - jetbrains-toolbox
-      - cursor-bin
-      - bruno-bin
       - obsidian
       - steam
 
@@ -23,18 +24,22 @@
       pacman:
         update_cache: yes
 
-    - name: Install AUR helper (yay)
+    - name: Install AUR packages
       shell: |
-        if ! command -v yay &> /dev/null; then
-          git clone https://aur.archlinux.org/yay-bin.git
-          cd yay-bin
-          makepkg -si
-        fi
+        yay --sudoloop -S --noconfirm {{ aur_packages | join(' ') }}
+      become: no
       become_user: "{{ ansible_user_id }}"
+
+
+    - name: Install repository packages
+      pacman:
+        name: "{{ repo_packages }}"
+        state: present
 
     - name: Install AUR packages
       shell: |
-        yay -S --noconfirm {{ yay_packages | join(' ') }}
+        yay -S --noconfirm {{ aur_packages | join(' ') }}
+      become: no
       become_user: "{{ ansible_user_id }}"
 
     - name: Enable and start Docker service
@@ -54,6 +59,7 @@
         if ! command -v rustc &> /dev/null; then
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
         fi
+      become: no
       become_user: "{{ ansible_user_id }}"
 
     - name: Install SDKMAN
@@ -61,6 +67,7 @@
         if ! command -v sdk &> /dev/null; then
           curl -s "https://get.sdkman.io" | bash
         fi
+      become: no
       become_user: "{{ ansible_user_id }}"
 
     - name: Install Node.js
@@ -79,6 +86,7 @@
           yarn -v
         
         fi
+      become: no
       become_user: "{{ ansible_user_id }}"
 
     - name: Install PHP via phpenv
@@ -90,5 +98,6 @@
           phpenv install 8.2
           phpenv global 8.2
         fi
+      become: no
       become_user: "{{ ansible_user_id }}"
 
